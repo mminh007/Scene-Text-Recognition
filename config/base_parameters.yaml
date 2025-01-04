@@ -1,0 +1,48 @@
+config_file: ./configs/base_parameters.yaml
+data: icdar2003.zip
+xml_file: icdar2003/SceneTrialTrain/words.xml
+
+src_dir: ./DATA
+yolo_dir: yolo_data
+ocr_dir: ocr
+
+
+# data
+## CRNN
+imgsz: (100, 420)
+batch_size: 64
+hidden_state: 256
+num_layers: 3
+drop_out: 0.2
+unfreeze_layers: 3
+device: cuda
+epochs: 100
+lr: 5e-4
+weight_decay: 1e-5
+seed: 0
+val_size: 0.1
+test_size: 0.1
+output: crnn_output
+
+
+## YOLO
+yl_imgsz: 640
+yl_epochs: 100
+yl_cache: 1 # 1 = True, 0 = False
+yl_patience: 20
+yl_plots: 1 # 1 = True, 0 = False
+yl_save_data: 1 # 1 = True, 0 = False
+yl_test_size: 0.125
+yl_val_size: 0.2
+yl_seed: 0
+yl_batch: 16
+
+
+## MLflow
+run_name: detect_base
+register_name: YOLO_CRNN
+ml_version: v0.0
+tracking_uri: http://192.168.1.11:5000
+yolo_experiment_name: YOLOv8
+crnn_experiment_name: CRNN
+#experiment_name: STR_Experiment
