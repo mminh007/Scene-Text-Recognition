@@ -3,6 +3,7 @@ from src.datasets import build_dataloader
 from src.models import CRNN, evaluate
 from src.utils import encode, decode, create_voc, connect_mflow
 import numpy as np
+import os
 import torch
 import torch.nn as nn
 import mlflow
@@ -15,9 +16,10 @@ import time
 def main(args, **kwargs):
     # Process data for yolo model and CRNN model
     
-    OCR_DIR = SRC_DIR / args.ocr_dir
-
     connect_mflow(args)
+
+    TMP_DIR = Path(args.tmp_dir) / args.output
+    SRC_DIR = Path(args.src_dir)
 
     # Trainig CRNN model
     imgs, labels, char_to_idx, idx_to_char, max_label_len, vocab_size = create_voc(args)
@@ -45,7 +47,7 @@ def main(args, **kwargs):
                                  weight_decay=args.weight_decay)
     
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer,
-                                                step_size=args.epoch * 0.5, gamma=0.1)
+                                                step_size=args.epochs * 0.5, gamma=0.1)
     
     with mlflow.start_run(run_name=args.run_name) as run:
         print(f"MLFLOW run_id: {run.info.run_id}")
@@ -129,11 +131,13 @@ def main(args, **kwargs):
             scheduler.step()
             print(f"Time taken: {end - start}")
 
-        SRC_DIR = Path(args.src_dir)
-        path_save = SRC_DIR / args.output / run.info.run_id
-        path_save.mkdir(parents = True, exist_ok=True)
-        
-        torch.save(best_model_info, path_save / "best_model.pth")
+        torch.save(best_model_info, TMP_DIR / "model.pth")
+        # local DIR
+        local_artifacts = SRC_DIR / args.output / run.info.run_id
+        local_artifacts.mkdir(parents = True, exist_ok=True)
+
+        cmd_0 = f"cp {TMP_DIR}/model.pth {local_artifacts}/model.pth" # copy model.pth from cloud to local
+        os.system(cmd_0)
 
         # Test loss
         model.load_state_dict(best_model_info["model_state_dict"])
@@ -142,13 +146,14 @@ def main(args, **kwargs):
 
         # log model to mlflow model sever
         log_model(model,
-                  artifact_path="CRNN-model",
-                  pip_requirements= "./requirements")
+                  artifact_path="CRNN_model",
+                  pip_requirements= "./requirements.txt")
         
         mlflow.log_artifact("./configs/base_parameters.yaml", artifact_path="config")
         
+        # using xcom_push to pass data between tasks.
         kwargs["ti"].xcom_push(key="run_id", value = run.info.run_id)
-        kwargs["ti"].xcom_push(key="val_loss", value=best_model_info["best_loss"])
+        kwargs["ti"].xcom_push(key="test_loss", value = test_loss)
 
         print("Training Completed!")
 

@@ -2,7 +2,8 @@ config_file: ./configs/base_parameters.yaml
 data: icdar2003.zip
 xml_file: icdar2003/SceneTrialTrain/words.xml
 
-src_dir: ./DATA
+src_dir: ./DATA  # root folder contains dataset 
+tmp_dir: ./str_tmp_dir # root folder on cloud
 yolo_dir: yolo_data
 ocr_dir: ocr
 
@@ -31,7 +32,6 @@ yl_epochs: 100
 yl_cache: 1 # 1 = True, 0 = False
 yl_patience: 20
 yl_plots: 1 # 1 = True, 0 = False
-yl_save_data: 1 # 1 = True, 0 = False
 yl_test_size: 0.125
 yl_val_size: 0.2
 yl_seed: 0
@@ -40,9 +40,10 @@ yl_batch: 16
 
 ## MLflow
 run_name: detect_base
-register_name: YOLO_CRNN
+registered_name: YOLO_CRNN
+model_alias: production
 ml_version: v0.0
-tracking_uri: http://192.168.1.11:5000
-yolo_experiment_name: YOLOv8
-crnn_experiment_name: CRNN
-#experiment_name: STR_Experiment
+tracking_uri: http://localhost:5000
+# yolo_experiment_name: YOLOv8
+# crnn_experiment_name: CRNN
+experiment_name: STR_Experiment
