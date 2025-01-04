@@ -192,11 +192,12 @@ def create_voc(args):
 def connect_mflow(args, model_name=None):
     
     MLFLOW_TRACKING_URI = args['tracking_uri']
+    MLFLOW_EXPERIMENT_NAME = args['experiment_name']
 
-    if model_name == "yolo":
-        MLFLOW_EXPERIMENT_NAME = args['yolo_experiment_name']
-    else:
-        MLFLOW_EXPERIMENT_NAME = args['crnn_experiment_name']
+    # if model_name == "yolo":
+    #     MLFLOW_EXPERIMENT_NAME = args['yolo_experiment_name']
+    # else:
+    #     MLFLOW_EXPERIMENT_NAME = args['crnn_experiment_name']
 
     try:
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -206,3 +207,26 @@ def connect_mflow(args, model_name=None):
     except Exception as e:
         print(f"Error: {e}")
         raise e
+    
+
+def registered_model(client, registered_name, model_alias, run_id):
+    try:
+        print(f"Registering model: {registered_name}")
+        client.create_registered_model(registered_name)
+        client.get_registered_model(model_alias)
+    except:
+        print(f"Model: {registered_name} already exists")
+    
+    print(f"Creating model version: {model_alias}")
+    model_uri = f"run:/{run_id}/pytoch_model"
+    mv = client.create_model_version(registered_name, model_uri, run_id)
+
+    print(f"Creating model alias: {model_alias}")
+    client.set_registered_model_alias(name=registered_name,
+                                        alias=model_alias,
+                                        version=mv.version)
+    print("--Model Version--")
+    print("Name: {}".format(mv.name))
+    print("Version: {}".format(mv.version))
+    print("Aliases: {}".format(mv.aliases))
+    
